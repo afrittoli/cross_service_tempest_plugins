@@ -1,0 +1,12 @@
+- name: Refresh apt repos
+  become: true
+  apt:
+    update_cache: true
+    
+- name: Install python
+  become: true
+  apt:
+    name: "{{ item }}"
+  with_items:
+  - python
+  - python-dev

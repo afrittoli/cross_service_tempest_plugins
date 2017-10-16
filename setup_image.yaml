@@ -4,9 +4,10 @@
     - name: Setup a VM to create the workshop image
       os_server:
        state: present
+       cloud: "{{ cloud_profile }}"
        name: workshop_base
        image: "Ubuntu 16.04"
-       key_name: andreaf
+       key_name: "{{ cloud_keyname }}"
        timeout: 200
        flavor: r2-15
       register: vm
@@ -14,13 +15,11 @@
       add_host:
         name: "{{ vm.openstack.interface_ip }}"
         group: cloud
-        ansible_user: ubunutu
 
 - hosts: cloud
   gather_facts: yes
-  vars_files:
-    - variables.yaml
   roles:
+    - initial_setup
     - gather_host_info
     - fix_etc_hosts
     - fix_disk_layout
@@ -28,50 +27,4 @@
     - start_fresh_logging
     - setup_stack_user
     - setup_tempest_user
-  tasks:
-    - name: Clone all git repos from stable/pike
-      become: true
-      become_user: stack
-      git:
-        repo: "https://git.openstack.org/{{ item }}"
-        dest: "{{ BASE }}/{{ item | basename }}"
-        reference: stable/pike
-      with_items:
-      - openstack-dev/devstack
-      - openstack/requirements
-      - openstack/keystone
-      - openstack/keystonemiddleware
-      - openstack/nova
-      - openstack/glance
-      - openstack/glance_store
-      - openstack/neutron
-      - openstack/designate
-      - openstack/heat
-      - openstack/heat-cfntools
-      - openstack/heat-templates
-    - name: Clone all branchless git repos
-      become: true
-      become_user: stack
-      git:
-        repo: "https://git.openstack.org/{{ item }}"
-        dest: "{{ BASE }}/{{ item | basename }}"
-      with_items:
-      - openstack/tempest
-    - name: Pre-install required packages
-      become: true
-      apt:
-        name: "{{ item }}"
-        state: present
-      with_items: "{{ bin_packages }}"
-    - name: Install pip using devstack tool
-      become: true
-      become_user: stack
-      command: ./tools/install_pip.sh
-      args:
-        chdir: "{{ BASE }}/devstack"
-    - name: Pre-run the fixup stuff script
-      become: true
-      become_user: stack
-      command: ./tools/fixup_stuff.sh
-      args:
-        chdir: "{{ BASE }}/devstack"
+    - pre_install_devstack_stuff
