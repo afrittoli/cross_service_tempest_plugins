@@ -2,7 +2,7 @@
 - hosts: cloud
   gather_facts: yes
   vars_files:
-    - devstack_gate_vars.yaml
+    - variables.yaml
   roles:
     - gather_host_info
     - fix_etc_hosts
@@ -11,3 +11,30 @@
     - start_fresh_logging
     - setup_stack_user
     - setup_tempest_user
+  tasks:
+    - name: Clone all git repos
+      become: true
+      become_user: stack
+      git:
+        repo: "https://git.openstack.org/{{ item }}"
+        dest: "{{ BASE }}/{{ item | basename }}"
+      with_items:
+      - openstack-dev/devstack
+      - openstack/requirements
+      - openstack/tempest
+      - openstack/keystone
+      - openstack/keystonemiddleware
+      - openstack/nova
+      - openstack/glance
+      - openstack/glance_store
+      - openstack/neutron
+      - openstack/designate
+      - openstack/heat
+      - openstack/heat-cfntools
+      - openstack/heat-templates
+    - name: Pre-install required packages
+      become: true
+      apt:
+        name: "{{ item }}"
+        state: present
+      with_items: "{{ bin_packages }}"

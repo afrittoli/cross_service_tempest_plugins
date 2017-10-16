@@ -1,2 +1,0 @@
----
-BASE: "{{ lookup('env', 'BASE')|default('/opt/stack', true) }}"
