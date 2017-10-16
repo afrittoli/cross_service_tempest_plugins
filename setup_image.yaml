@@ -1,4 +1,21 @@
 ---
+- hosts: localhost
+  tasks:
+    - name: Setup a VM to create the workshop image
+      os_server:
+       state: present
+       name: workshop_base
+       image: "Ubuntu 16.04"
+       key_name: andreaf
+       timeout: 200
+       flavor: r2-15
+      register: vm
+    - name: Add the VM to the inventory
+      add_host:
+        name: "{{ vm.openstack.interface_ip }}"
+        group: cloud
+        ansible_user: ubunutu
+
 - hosts: cloud
   gather_facts: yes
   vars_files:
