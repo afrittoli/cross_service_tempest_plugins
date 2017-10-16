@@ -18,7 +18,7 @@ To run through the workshop itself:
 Building the Workshop Image
 ---------------------------
 
-The image setup is done via the setup\_image.yaml playbook.
+The image setup is done via the setup_image.yaml playbook.
 It uses existing ansible roles from openstack-infra/devstack-gate.
 
 To run the playbook, define the IP of your cloud VM and the
@@ -26,5 +26,5 @@ passwordless user to connect to it in the `inventory` file.
 The run the following steps::
 
   git clone https://git.openstack.org/openstack-infra/devstack-gate
-  export ANSIBLE\_ROLES\_PATH=$PWD/devstack-gate/playbooks/roles
-  ansible-playbook setup\_image.yaml
+  export ANSIBLE_ROLES_PATH=$PWD/devstack-gate/playbooks/roles
+  ansible-playbook setup_image.yaml
