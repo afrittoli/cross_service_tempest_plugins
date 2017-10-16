@@ -25,6 +25,6 @@
     - fix_disk_layout
     - create_base_folder
     - start_fresh_logging
-    - setup_stack_user
+    - stack_user
     - setup_tempest_user
     - pre_install_devstack_stuff

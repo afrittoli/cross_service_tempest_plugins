@@ -11,7 +11,7 @@
   git:
     repo: "https://git.openstack.org/{{ item }}"
     dest: "{{ BASE }}/{{ item | basename }}"
-    reference: stable/pike
+    refspec: stable/pike
   with_items:
   - openstack-dev/devstack
   - openstack/requirements
@@ -23,8 +23,6 @@
   - openstack/neutron
   - openstack/designate
   - openstack/heat
-  - openstack/heat-cfntools
-  - openstack/heat-templates
 
 - name: Clone all branchless git repos
   become: true
@@ -34,6 +32,8 @@
     dest: "{{ BASE }}/{{ item | basename }}"
   with_items:
   - openstack/tempest
+  - openstack/heat-cfntools
+  - openstack/heat-templates
 
 - name: Pre-install required packages
   become: true
@@ -52,6 +52,6 @@
 - name: Pre-run the fixup stuff script
   become: true
   become_user: stack
-  command: ./tools/fixup_stuff.sh
+  shell: REQUIREMENTS_DIR={{ BASE }}/requirements ./tools/fixup_stuff.sh
   args:
     chdir: "{{ BASE }}/devstack"

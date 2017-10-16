@@ -43,10 +43,9 @@ Dependencies:
   - The name of the ssh key in the cloud can be set in
     `host_vars/localhost`
 
-To run the playbook, define the IP of your cloud VM and the
-passwordless user to connect to it in the `inventory` file.
-The run the following steps::
+To execute the playbook, once the dependencies above are fullfilled,
+run the following steps::
 
   git clone https://git.openstack.org/openstack-infra/devstack-gate
   export ANSIBLE_ROLES_PATH=$PWD/devstack-gate/playbooks/roles
-  ansible-playbook setup_image.yaml
+  ansible-playbook -i inventory setup_image.yaml
