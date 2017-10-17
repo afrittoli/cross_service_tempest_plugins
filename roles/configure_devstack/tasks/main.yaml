@@ -1,0 +1,7 @@
+- name: Deploy devstack configuration
+  become: true
+  become_user: stack
+  copy:
+    src: files/local.conf
+    dest: "{{ BASE }}/devstack/local.conf"
+    owner: stack

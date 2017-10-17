@@ -35,6 +35,7 @@
   - openstack/tempest
   - openstack/heat-cfntools
   - openstack/heat-templates
+  - openstack/designate-tempest-plugin
 
 - name: Pre-install required packages
   become: true
@@ -56,3 +57,13 @@
   shell: REQUIREMENTS_DIR={{ BASE }}/requirements ./tools/fixup_stuff.sh
   args:
     chdir: "{{ BASE }}/devstack"
+
+- name: Deploy the requirements file
+  copy:
+    src: files/pip-preinstall.txt
+    dest: /tmp/requirements.txt
+
+- name: Pre-install system wide deps
+  become: true
+  pip:
+    requirements: /tmp/requirements.txt
