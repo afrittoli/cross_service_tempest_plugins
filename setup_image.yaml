@@ -28,3 +28,4 @@
     - stack_user
     - setup_tempest_user
     - pre_install_devstack_stuff
+    - configure_devstack

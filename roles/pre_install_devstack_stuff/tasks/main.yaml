@@ -20,6 +20,7 @@
   - openstack/nova
   - openstack/glance
   - openstack/glance_store
+  - openstack/cinder
   - openstack/neutron
   - openstack/designate
   - openstack/heat
