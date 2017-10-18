@@ -9,7 +9,7 @@
        image: "Ubuntu 16.04"
        key_name: "{{ cloud_keyname }}"
        timeout: 200
-       flavor: r2-15
+       flavor: s1-8
       register: vm
     - name: Add the VM to the inventory
       add_host:
