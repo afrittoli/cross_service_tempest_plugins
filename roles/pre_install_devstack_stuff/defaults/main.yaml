@@ -65,3 +65,5 @@ bin_packages:
   - cryptsetup
   - genisoimage
   - gir1.2-libosinfo-1.0
+  - libvirt-bin
+  - libvirt-dev

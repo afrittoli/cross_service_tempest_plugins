@@ -11,7 +11,7 @@
   git:
     repo: "https://git.openstack.org/{{ item }}"
     dest: "{{ BASE }}/{{ item | basename }}"
-    refspec: stable/pike
+    version: stable/pike
   with_items:
   - openstack-dev/devstack
   - openstack/requirements
@@ -65,8 +65,8 @@
 
 - name: Pre-install system wide deps
   become: true
-  become_user: stack
   pip:
     requirements: requirements.txt
+    executable: /usr/local/bin/pip
   args:
     chdir: /tmp
