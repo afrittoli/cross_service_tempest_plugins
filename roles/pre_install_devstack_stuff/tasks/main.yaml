@@ -65,5 +65,8 @@
 
 - name: Pre-install system wide deps
   become: true
+  become_user: stack
   pip:
-    requirements: /tmp/requirements.txt
+    requirements: requirements.txt
+  args:
+    chdir: /tmp
