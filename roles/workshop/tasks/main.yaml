@@ -15,3 +15,8 @@
   - afrittoli/designate-tempest-plugin
   - afrittoli/heat-tempest-plugin
   - openstack/tempest-plugin-cookiecutter
+
+- name: Touch a .clean file to mark the image as new
+  file:
+    path: "{{ BASE }}/workshop/.clean"
+    state: touch
