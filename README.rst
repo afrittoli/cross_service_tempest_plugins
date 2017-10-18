@@ -19,13 +19,21 @@ Building the Workshop Image
 ---------------------------
 
 The image setup is done via the setup_image.yaml playbook.
+The playbook creates a new VM (unless an existing one is found),
+it runs all the image preparation roles, it creates a new snapshot
+and if successful it deletes old snapshots.
+
 It uses existing ansible roles from openstack-infra/devstack-gate.
 
-Dependencies:
+Limitations:
 
 - only tested on Ubuntu 16.04 OVH image
 
+Dependencies:
+
 - ansible and shade installed
+
+  `pip install -r ansible/requirements.txt`
 
   - When using a virtual environment, configure the path to python
     in `host_vars/localhost`
@@ -35,7 +43,7 @@ Dependencies:
   - The default profile is called workshop. To use a different one
     configure it in `host_vars/localhost`
 
-- an ssh key already available in the cloud and on disk
+- an ssh key in the cloud and on disk
 
   - The path to the ssh key can be set via an env variable
     WORKSHOP_SSH_KEY or in `group_vars/cloud`
@@ -48,4 +56,5 @@ run the following steps::
 
   git clone https://git.openstack.org/openstack-infra/devstack-gate
   export ANSIBLE_ROLES_PATH=$PWD/devstack-gate/playbooks/roles
+  cd ansible
   ansible-playbook -i inventory setup_image.yaml
