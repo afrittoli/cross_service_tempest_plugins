@@ -1,0 +1,5 @@
+- name: Deploy stack unit
+  become: true
+  copy:
+    src: files/stack.service
+    dest: /lib/systemd/system/stack.service

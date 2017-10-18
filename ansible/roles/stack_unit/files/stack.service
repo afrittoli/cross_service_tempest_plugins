@@ -1,0 +1,11 @@
+[Unit]
+Description=A one shot service run run stack.sh as stack at boot
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=su - stack -c /opt/stack/devstack/stack.sh
+ExecStop=echo "Not really stopping"
+
+[Install]
+WantedBy=multi-user.target

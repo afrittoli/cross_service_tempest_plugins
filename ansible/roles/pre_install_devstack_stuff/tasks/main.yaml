@@ -72,7 +72,16 @@
     chdir: /tmp
   when: preinstall_pip
 
+- name: Ensure devstack/files
+  file:
+    path: "{{ BASE }}/devstack/files"
+    state: directory
+    owner: stack
+    mode: u+rwx
+
 - name: Download cirros image
+  become: true
+  become_user: stack
   get_url:
     url: http://download.cirros-cloud.net/0.3.5/cirros-0.3.5-x86_64-disk.img
     dest: "{{ BASE }}/devstack/files/cirros-0.3.5-x86_64-disk.img"
