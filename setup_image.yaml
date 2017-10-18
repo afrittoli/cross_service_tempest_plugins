@@ -31,24 +31,27 @@
     - configure_devstack
 
 - hosts: localhost
+  vars:
+    openstack: "{{ ansible_python_interpreter|dirname }}/openstack"
   tasks:
     - name: List existing images
-      command: openstack --os-cloud {{ cloud_profile }} \
-                 image list --private -f json
+      command: >
+        {{ openstack }} --os-cloud {{ cloud_profile }} \
+          image list --private -f json
       register: images_out
     - name: Get existing images and name of the new one
       set_fact:
-        old_images: "{{ images_out | from_json }}"
+        old_images: "{{ images_out.stdout | from_json }}"
         new_image: "workshop_image_{{ ansible_date_time.date }}_{{ ansible_date_time.time }}"
     - name: Snapshot the VM to create a new workshop image
-      command: openstack --os-cloud {{ cloud_profile }} \
-                 server image create {{ vm.id }} \
-                 --name {{ new_image }}
-                 --wait
+      command: >
+        {{ openstack }} --os-cloud {{ cloud_profile }} \
+          server image create {{ vm.id }} \
+          --name {{ new_image }} --wait
     - name: Delete old images
       os_image:
         state: absent
         cloud: "{{ cloud_profile }}"
-        name: "{{ item.name }}"
-      with_items: old_images
-      when: item.name | match("workshop_image_.*")
+        name: "{{ item.Name }}"
+      with_items: "{{ old_images }}"
+      when: item.Name | match('workshop_image_.*')
