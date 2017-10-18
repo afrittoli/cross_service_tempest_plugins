@@ -1,0 +1,17 @@
+- name: Create the workshop folder
+  file:
+    path: "{{ BASE }}/workshop"
+    state: directory
+    mode: 0755
+
+- name: Clone all workshop git repos from github
+  become: true
+  become_user: stack
+  git:
+    repo: "https://github.com/{{ item }}"
+    dest: "{{ BASE }}/workshop/{{ item | basename }}"
+  with_items:
+  - afrittoli/cross_service_tempest_plugins
+  - afrittoli/designate-tempest-plugin
+  - afrittoli/heat-tempest-plugin
+  - openstack/tempest-plugin-cookiecutter
