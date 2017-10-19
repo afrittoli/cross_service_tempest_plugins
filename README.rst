@@ -55,6 +55,6 @@ To execute the playbook, once the dependencies above are fullfilled,
 run the following steps::
 
   git clone https://git.openstack.org/openstack-infra/devstack-gate
-  export ANSIBLE_ROLES_PATH=$PWD/devstack-gate/playbooks/roles:$PWD/devstack-gate/roles
+  export ANSIBLE_ROLES_PATH=$PWD/devstack-gate/playbooks/roles
   cd ansible
   ansible-playbook -i inventory setup_image.yaml

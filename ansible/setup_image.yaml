@@ -37,7 +37,6 @@
     - setup_tempest_user
     - pre_install_devstack_stuff
     - configure_devstack
-    - configure-swap
 
 - hosts: localhost
   vars:
