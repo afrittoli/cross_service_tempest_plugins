@@ -38,6 +38,7 @@
   become: yes
 
 - name: Make sure password authentication is enabled
+  become: true
   lineinfile:
     path: /etc/ssh/sshd_config
     regexp: '^PasswordAuthentication *'
