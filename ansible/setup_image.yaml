@@ -1,15 +1,21 @@
 ---
 - hosts: localhost
   tasks:
+    - name: Delete existing workshop VM
+      os_server:
+        cloud: "{{ cloud_profile }}"
+        name: workshop_base
+        state: absent
+      when: force_new_vm
     - name: Setup a VM to create the workshop image
       os_server:
-       state: present
-       cloud: "{{ cloud_profile }}"
-       name: workshop_base
-       image: "Ubuntu 16.04"
-       key_name: "{{ cloud_keyname }}"
-       timeout: 200
-       flavor: s1-8
+        state: present
+        cloud: "{{ cloud_profile }}"
+        name: workshop_base
+        image: "Ubuntu 16.04"
+        key_name: "{{ cloud_keyname }}"
+        timeout: 200
+        flavor: s1-8
       register: vm
     - name: Add the VM to the inventory
       add_host:
