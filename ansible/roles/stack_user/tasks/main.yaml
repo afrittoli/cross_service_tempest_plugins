@@ -36,3 +36,9 @@
     owner: stack 
     group: stack
   become: yes
+
+- name: Make sure password authentication is enabled
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^PasswordAuthentication *'
+    line: 'PasswordAuthentication yes'
