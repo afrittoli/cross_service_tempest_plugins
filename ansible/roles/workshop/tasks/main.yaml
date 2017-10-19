@@ -1,8 +1,10 @@
 - name: Create the workshop folder
+  become: true
   file:
     path: "{{ BASE }}/workshop"
     state: directory
     mode: 0755
+    owner: stack
 
 - name: Clone all workshop git repos from github
   become: true
