@@ -1,5 +1,24 @@
 - name: Deploy stack unit
   become: true
-  copy:
+  template:
     src: files/stack.service
     dest: /lib/systemd/system/stack.service
+
+- name: Deploy stack script
+  become: true
+  become_user: stack
+  template:
+    src: files/stack_service.sh
+    dest: "{{ BASE }}/stack_service.sh"
+
+- name: Enable the stack service
+  become: true
+  command: systemctl enable stack
+
+- name: Touch a .clean file to mark the image as new
+  become: true
+  become_user: stack
+  command: >
+    touch "{{ BASE }}/.clean"
+  args:
+    creates: "{{ BASE }}/.clean"
