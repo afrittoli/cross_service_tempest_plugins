@@ -1,4 +1,4 @@
-# Copyright 2015
+# Copyright 2017
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -12,4 +12,14 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+from oslo_config import cfg
+
+cross_service_group = cfg.OptGroup(name="cross-service",
+                                   title="Cross Service plugin options")
+
+CrossServiceGroup = [
+    cfg.StrOpt('dns_domain',
+               default='my-workshop-domain.org.',
+               help="The DNS domain used for testing."),
+]
 

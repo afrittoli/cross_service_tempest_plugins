@@ -1,6 +1,7 @@
-===============================================
-Tempest Integration of cross_service
-===============================================
+=============================================
+Tempest Integration of tests for the Workshop
+=============================================
 
-This directory contains Tempest tests to cover the cross_service project.
-
+This Tempest plugin is part of the "Writing cross service Tempest plugins"
+workshop. It contains the code which is used during the workshop to demo
+writing a Tempest plugin that depends on multiple Tempest plugins.

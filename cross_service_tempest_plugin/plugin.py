@@ -19,7 +19,7 @@ import os
 from tempest import config
 from tempest.test_discover import plugins
 
-from cross_service_tempest_plugin import config as project_config
+from cross_service_tempest_plugin import config as cs_config
 
 
 class CrossServiceTempestPlugin(plugins.TempestPlugin):
@@ -31,7 +31,16 @@ class CrossServiceTempestPlugin(plugins.TempestPlugin):
         return full_test_dir, base_path
 
     def register_opts(self, conf):
-        pass
+        conf.register_group(cs_config.cross_service_group)
+        conf.register_opts(cs_config.CrossServiceGroup,
+                           cs_config.cross_service_group)
 
     def get_opt_lists(self):
-        pass
+        return [
+            (cs_config.cross_service_group.name,
+             cs_config.CrossServiceGroup),
+        ]
+
+    def get_service_clients(self):
+        # No extra service client defined by this plugin
+        return []
