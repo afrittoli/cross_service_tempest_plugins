@@ -25,9 +25,9 @@ class HeatDriverNeutronDNSIntegration(test.BaseTestCase):
     @classmethod
     def skip_checks(cls):
         super(HeatDriverNeutronDNSIntegration, cls).skip_checks()
-        if not getattr(CONF.service_available, 'dns', False):
+        if not getattr(CONF.service_available, 'designate', False):
             raise cls.skipException('Designate support is required')
-        if not getattr(CONF.service_available, 'orchestration', False):
+        if not getattr(CONF.service_available, 'heat_plugin', False):
             raise cls.skipException('Heat support is required')
 
     def test_port_on_extenal_net_to_dns(self):
