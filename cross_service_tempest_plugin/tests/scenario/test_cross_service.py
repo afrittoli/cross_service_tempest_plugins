@@ -30,11 +30,11 @@ class HeatDriverNeutronDNSIntegration(test.BaseTestCase):
         if not getattr(CONF.service_available, 'orchestration', False):
             raise cls.skipException('Heat support is required')
 
-    def port_on_extenal_net_to_dns(self):
+    def test_port_on_extenal_net_to_dns(self):
         pass
 
-    def floating_ip_with_name_from_port_to_dns(self):
+    def test_floating_ip_with_name_from_port_to_dns(self):
         pass
 
-    def floating_ip_with_own_name_to_dns(self):
+    def test_floating_ip_with_own_name_to_dns(self):
         pass
