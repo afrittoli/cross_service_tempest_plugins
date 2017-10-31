@@ -48,6 +48,7 @@ class HeatDriverNeutronDNSIntegration(test.BaseTestCase):
     def setup_clients(cls):
         super(HeatDriverNeutronDNSIntegration, cls).setup_clients()
         cls.heat_client = cls.os_primary.orchestration.OrchestrationClient()
+        cls.zones_client = cls.os_primary.dns_v2.ZonesClient()
         cls.network_admin_client = cls.os_admin.network.NetworksClient()
         cls.records_client = cls.os_primary.dns_v2.RecordsetClient()
 
@@ -64,10 +65,24 @@ class HeatDriverNeutronDNSIntegration(test.BaseTestCase):
             'description': 'test_floating_ip_with_name_from_port_to_dns'
         }
         # Create the domain on designate (via HEAT)
-        domain_stack = self.heat_client.create_stack(
+        zone_stack = self.heat_client.create_stack(
             name='zone', template=heat_zone_template,
             parameters=heat_zone_parameters)
-        self.addCleanup(self.heat_client.delete_stack, domain_stack['id'])
+        zone_stack_id = zone_stack['name'] + '/' + zone_stack['id']
+        self.addCleanup(self.heat_client.wait_for_stack_status,
+                        zone_stack_id, 'DELETE_COMPLETE')
+        self.addCleanup(self.heat_client.delete_stack, zone_stack_id)
+        self.heat_client.wait_for_stack_status(zone_stack_id,
+                                               'CREATE_COMPLETE')
+        # There should be only one resources, the zone
+        zone_resource = next(self.heat_client.list_resources(
+            zone_stack_id)['resources'])
+
+        # Assert that the zone was created and that the ID and name match
+        zone = self.zones_client.show_zone(
+            zone_resource['physical_resource_id'])
+        self.assertEqual(CONF.cross_service.dns_domain, zone['name'])
+
         # Update the public network definition with the domain
 
         # Create ports and servers (via HEAT)
