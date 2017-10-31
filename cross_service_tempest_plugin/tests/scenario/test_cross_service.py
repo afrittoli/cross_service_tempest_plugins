@@ -67,23 +67,34 @@ class HeatDriverNeutronDNSIntegration(test.BaseTestCase):
         # Create the domain on designate (via HEAT)
         zone_stack = self.heat_client.create_stack(
             name='zone', template=heat_zone_template,
-            parameters=heat_zone_parameters)
-        zone_stack_id = zone_stack['name'] + '/' + zone_stack['id']
+            parameters=heat_zone_parameters)['stack']
+        zone_stack_id = 'zone/' + zone_stack['id']
         self.addCleanup(self.heat_client.wait_for_stack_status,
                         zone_stack_id, 'DELETE_COMPLETE')
         self.addCleanup(self.heat_client.delete_stack, zone_stack_id)
         self.heat_client.wait_for_stack_status(zone_stack_id,
                                                'CREATE_COMPLETE')
         # There should be only one resources, the zone
-        zone_resource = next(self.heat_client.list_resources(
-            zone_stack_id)['resources'])
+        zone_resource = self.heat_client.list_resources(
+            zone_stack_id)['resources'][0]
 
         # Assert that the zone was created and that the ID and name match
-        zone = self.zones_client.show_zone(
+        _, zone = self.zones_client.show_zone(
             zone_resource['physical_resource_id'])
         self.assertEqual(CONF.cross_service.dns_domain, zone['name'])
 
         # Update the public network definition with the domain
+        self.network_admin_client.update_network(
+            CONF.network.public_network_id,
+            dns_domain=CONF.cross_service.dns_domain)
+        self.addCleanup(self.network_admin_client.update_network,
+                        CONF.network.public_network_id, dns_domain="")
+
+        # Assert that the network update was successful
+        public_network = self.network_admin_client.show_network(
+            CONF.network.public_network_id)
+        self.assertEqual(CONF.cross_service.dns_domain,
+                         public_network['dns_domain'])
 
         # Create ports and servers (via HEAT)
 
