@@ -92,7 +92,7 @@ class HeatDriverNeutronDNSIntegration(test.BaseTestCase):
 
         # Assert that the network update was successful
         public_network = self.network_admin_client.show_network(
-            CONF.network.public_network_id)
+            CONF.network.public_network_id)['network']
         self.assertEqual(CONF.cross_service.dns_domain,
                          public_network['dns_domain'])
 
