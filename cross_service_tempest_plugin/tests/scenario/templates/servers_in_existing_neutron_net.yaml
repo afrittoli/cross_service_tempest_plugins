@@ -1,11 +1,17 @@
 heat_template_version: 2013-05-23
 
 description: >
-  HOT template to deploy two servers into an existing neutron tenant network and
-  assign floating IP addresses to each server so they are routable from the
+  HOT template to deploy two servers into an existing neutron tenant network
+  and assign floating IP addresses to each server so they are routable from the
   public network.
 
 parameters:
+  server1_name:
+    type: string
+    description: DNS name of server 1.
+  server2_name:
+    type: string
+    description: DNS name of server 1.
   key_name:
     type: string
     description: Name of keypair to assign to servers
@@ -30,7 +36,7 @@ resources:
   server1:
     type: OS::Nova::Server
     properties:
-      name: Server1
+      name: { get_param: server1_name }
       image: { get_param: image }
       flavor: { get_param: flavor }
       key_name: { get_param: key_name }
@@ -44,7 +50,7 @@ resources:
       fixed_ips:
         - subnet_id: { get_param: private_subnet_id }
       security_groups: [{ get_resource: server_security_group }]
-      dns_name: server1
+      dns_name: { get_param: server1_name }
 
   server1_floating_ip:
     type: OS::Neutron::FloatingIP
@@ -55,7 +61,7 @@ resources:
   server2:
     type: OS::Nova::Server
     properties:
-      name: Server2
+      name: { get_param: server2_name }
       image: { get_param: image }
       flavor: { get_param: flavor }
       key_name: { get_param: key_name }
@@ -69,7 +75,7 @@ resources:
       fixed_ips:
         - subnet_id: { get_param: private_subnet_id }
       security_groups: [{ get_resource: server_security_group }]
-      dns_name: server2
+      dns_name: { get_param: server2_name }
 
   server2_floating_ip:
     type: OS::Neutron::FloatingIP
