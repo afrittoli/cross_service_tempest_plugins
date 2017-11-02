@@ -171,7 +171,7 @@ class HeatDriverNeutronDNSIntegration(test.BaseTestCase):
             vms_stack_id, 'server1_public_ip')['output']['output_value']
         vm1_ip_reverse = ipaddress.IPv4Address(vm1_public_ip).reverse_pointer
         vm2_public_ip = self.heat_client.show_output(
-            vms_stack_id, 'server1_public_ip')['output']['output_value']
+            vms_stack_id, 'server2_public_ip')['output']['output_value']
         vm2_ip_reverse = ipaddress.IPv4Address(vm2_public_ip).reverse_pointer
         reverse_zone_name = '.'.join(vm1_ip_reverse.split('.')[1:])
         _, reverse_zone = self.zones_admin_client.list_zones(
