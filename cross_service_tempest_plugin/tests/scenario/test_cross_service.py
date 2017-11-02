@@ -46,6 +46,8 @@ class HeatDriverNeutronDNSIntegration(test.BaseTestCase):
         super(HeatDriverNeutronDNSIntegration, cls).skip_checks()
         if not getattr(CONF.service_available, 'neutron', False):
             raise cls.skipException('Neutron support is required')
+        if not getattr(CONF.service_available, 'nova', False):
+            raise cls.skipException('Nova support is required')
         if not getattr(CONF.service_available, 'designate', False):
             raise cls.skipException('Designate support is required')
         if not getattr(CONF.service_available, 'heat_plugin', False):
