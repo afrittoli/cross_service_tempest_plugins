@@ -10,6 +10,7 @@
   template:
     src: files/stack_service.sh
     dest: "{{ BASE }}/workshop/stack_service.sh"
+    mode: u=rwx,g=rx,o=rx
 
 - name: Enable the stack service
   become: true

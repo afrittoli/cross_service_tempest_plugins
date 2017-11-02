@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import ipaddress
 import os
 
 from oslo_log import log as logging
@@ -60,10 +61,12 @@ class HeatDriverNeutronDNSIntegration(test.BaseTestCase):
         cls.servers_client = cls.os_primary.compute.ServersClient()
         cls.heat_client = cls.os_primary.orchestration.OrchestrationClient()
         cls.zones_client = cls.os_primary.dns_v2.ZonesClient()
+        cls.zones_admin_client = cls.os_admin.dns_v2.ZonesClient()
         cls.subnet_client = cls.os_primary.network.SubnetsClient()
         cls.network_client = cls.os_primary.network.NetworksClient()
         cls.network_admin_client = cls.os_admin.network.NetworksClient()
         cls.recordset_client = cls.os_primary.dns_v2.RecordsetClient()
+        cls.recordset_admin_client = cls.os_admin.dns_v2.RecordsetClient()
 
     @classmethod
     def resource_setup(cls):
@@ -158,16 +161,36 @@ class HeatDriverNeutronDNSIntegration(test.BaseTestCase):
         recordsets_names = [x['name'] for x in recordsets if
                             x['name'] != CONF.cross_service.dns_domain]
         self.assertEqual(2, len(recordsets_names))
-        self.assertIn(server_name1 + "." + CONF.cross_service.dns_domain,
-                      recordsets_names)
-        self.assertIn(server_name2 + "." + CONF.cross_service.dns_domain,
-                      recordsets_names)
+        vm1_fqdn = server_name1 + "." + CONF.cross_service.dns_domain
+        self.assertIn(vm1_fqdn, recordsets_names)
+        vm2_fqdn = server_name2 + "." + CONF.cross_service.dns_domain
+        self.assertIn(vm2_fqdn, recordsets_names)
+
+        # Check PTR records
+        vm1_public_ip = self.heat_client.show_output(
+            vms_stack_id, 'server1_public_ip')['output']['output_value']
+        vm1_ip_reverse = ipaddress.IPv4Address(vm1_public_ip).reverse_pointer
+        vm2_public_ip = self.heat_client.show_output(
+            vms_stack_id, 'server1_public_ip')['output']['output_value']
+        vm2_ip_reverse = ipaddress.IPv4Address(vm2_public_ip).reverse_pointer
+        reverse_zone_name = '.'.join(vm1_ip_reverse.split('.')[1:])
+        _, reverse_zone = self.zones_admin_client.list_zones(
+            params={'name': reverse_zone_name + '.',
+                    'headers': {'X-Auth-All-Projects': True}})
+        reverse_zone = reverse_zone['zones'][0]
+        _, reverse_recordsets = self.recordset_admin_client.list_recordset(
+            reverse_zone['id'],
+            params={'headers': {'X-Auth-All-Projects': True}})
+        reverse_recordsets = reverse_recordsets['recordsets']
+        ptr_recordsets = [(x['name'], x['records'][0]) for x in
+                          reverse_recordsets if x['type'] == 'PTR']
+        self.assertEqual(len(ptr_recordsets), 2)
+        self.assertIn((vm1_ip_reverse + '.', vm1_fqdn), ptr_recordsets)
+        self.assertIn((vm2_ip_reverse + '.', vm2_fqdn), ptr_recordsets)
 
         # SSH into a server, resolve other server's name to private IP
         vm1 = self.servers_client.list_servers(
             name=server_name1)['servers'][0]
-        vm1_public_ip = self.heat_client.show_output(
-            vms_stack_id, 'server1_public_ip')['output']['output_value']
         vm2_private_ip = self.heat_client.show_output(
             vms_stack_id, 'server2_private_ip')['output']['output_value']
         vm1_ssh = remote_client.RemoteClient(
@@ -194,6 +217,12 @@ class HeatDriverNeutronDNSIntegration(test.BaseTestCase):
         recordsets_names = [x['name'] for x in recordsets if
                             x['name'] != CONF.cross_service.dns_domain]
         self.assertEqual(0, len(recordsets_names))
+        _, reverse_recordsets = self.recordset_admin_client.list_recordset(
+            reverse_zone['id'],
+            params={'headers': {'X-Auth-All-Projects': True}})
+        reverse_recordsets = reverse_recordsets['recordsets']
+        ptr_recordsets = [x for x in reverse_recordsets if x['type'] == 'PTR']
+        self.assertEqual(len(ptr_recordsets), 0)
 
     def test_floating_ip_with_own_name_to_dns(self):
         pass
