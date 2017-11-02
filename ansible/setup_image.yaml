@@ -43,8 +43,8 @@
     - setup_tempest_user
     - pre_install_devstack_stuff
     - configure_devstack
-    - stack_unit
     - workshop
+    - stack_unit
 
 - hosts: localhost
   vars:
