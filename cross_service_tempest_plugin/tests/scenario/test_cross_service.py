@@ -14,15 +14,17 @@
 #    under the License.
 
 import os
-import re
 
+from oslo_log import log as logging
 from tempest import config
 from tempest.lib.common.utils import data_utils
+from tempest.lib.common.utils import test_utils
 from tempest.lib.common.utils.linux import remote_client
 from tempest import test
 from testtools import matchers
 
 CONF = config.CONF
+LOG = logging.getLogger(__name__)
 
 
 def load_template(base_file, file_name, sub_dir=None):
@@ -67,7 +69,8 @@ class HeatDriverNeutronDNSIntegration(test.BaseTestCase):
         keypair_name = data_utils.rand_name('workshop')
         cls.keypair = cls.keypair_client.create_keypair(
             name=keypair_name)['keypair']
-        cls.addClassResourceCleanup(cls.keypair_client.delete_keypair,
+        cls.addClassResourceCleanup(test_utils.call_and_ignore_notfound_exc,
+                                    cls.keypair_client.delete_keypair,
                                     keypair_name)
 
     def test_port_on_extenal_net_to_dns(self):
@@ -83,13 +86,15 @@ class HeatDriverNeutronDNSIntegration(test.BaseTestCase):
             'description': 'test_floating_ip_with_name_from_port_to_dns'
         }
         # Create the domain on designate (via HEAT)
+        LOG.debug("Create the domain on designate (via HEAT)")
         zone_stack = self.heat_client.create_stack(
             name='zone', template=heat_zone_template,
             parameters=heat_zone_parameters)['stack']
         zone_stack_id = 'zone/' + zone_stack['id']
         self.addCleanup(self.heat_client.wait_for_stack_status,
                         zone_stack_id, 'DELETE_COMPLETE')
-        self.addCleanup(self.heat_client.delete_stack, zone_stack_id)
+        self.addCleanup(test_utils.call_and_ignore_notfound_exc,
+                        self.heat_client.delete_stack, zone_stack_id)
         self.heat_client.wait_for_stack_status(zone_stack_id,
                                                'CREATE_COMPLETE')
         # There should be only one resources, the zone
@@ -102,6 +107,7 @@ class HeatDriverNeutronDNSIntegration(test.BaseTestCase):
         self.assertEqual(CONF.cross_service.dns_domain, zone['name'])
 
         # Update the private network definition with the domain
+        LOG.debug("Update the private network definition with the domain")
         private_network = self.get_tenant_network('primary')
         self.network_client.update_network(
             private_network['id'], dns_domain=CONF.cross_service.dns_domain)
@@ -115,6 +121,7 @@ class HeatDriverNeutronDNSIntegration(test.BaseTestCase):
                          private_network['dns_domain'])
 
         # Create ports and servers (via HEAT)
+        LOG.debug("Create ports and servers (via HEAT)")
         heat_vms_template = load_template(
             __file__, 'servers_in_existing_neutron_net.yaml',
             sub_dir='templates')
@@ -138,7 +145,8 @@ class HeatDriverNeutronDNSIntegration(test.BaseTestCase):
         vms_stack_id = 'vms/' + vms_stack['id']
         self.addCleanup(self.heat_client.wait_for_stack_status,
                         vms_stack_id, 'DELETE_COMPLETE')
-        self.addCleanup(self.heat_client.delete_stack, vms_stack_id)
+        self.addCleanup(test_utils.call_and_ignore_notfound_exc,
+                        self.heat_client.delete_stack, vms_stack_id)
         self.heat_client.wait_for_stack_status(vms_stack_id,
                                                'CREATE_COMPLETE')
         # Check records have been created
@@ -153,29 +161,37 @@ class HeatDriverNeutronDNSIntegration(test.BaseTestCase):
         self.assertIn(server_name2 + "." + CONF.cross_service.dns_domain,
                       recordsets_names)
 
-        # SSH into a server, resolve other server's name
+        # SSH into a server, resolve other server's name to private IP
         vm1 = self.servers_client.list_servers(
             name=server_name1)['servers'][0]
         vm1_public_ip = self.heat_client.show_output(
-            vms_stack_id, 'server1_public_ip')
+            vms_stack_id, 'server1_public_ip')['output']['output_value']
         vm2_private_ip = self.heat_client.show_output(
-            vms_stack_id, 'server2_private_ip')
+            vms_stack_id, 'server2_private_ip')['output']['output_value']
         vm1_ssh = remote_client.RemoteClient(
             vm1_public_ip, CONF.validation.image_ssh_user,
             pkey=self.keypair['private_key'], server=vm1,
             servers_client=self.servers_client)
+        vm2_lookup = vm1_ssh.exec_command(
+            'nslookup %s | grep %s' % (server_name2, vm2_private_ip))
         # NOTE(andreaf) The following match may be cirros specific
-        vm2_lookup = vm1_ssh.exec_command('nslookup %s' % server_name2)
+        # THe final dot is not displayed by nslookup
         expected_vm2_lookup = '^Address [0-9]: %s %s.%s$' % (
-            vm2_private_ip, server_name2, CONF.cross_service.dns_domain)
-        self.assertThat(
-            vm2_lookup,
-            matchers.MatchesRegex(expected_vm2_lookup, re.MULTILINE))
+            vm2_private_ip, server_name2, CONF.cross_service.dns_domain[:-1])
+        self.assertThat(vm2_lookup,
+                        matchers.MatchesRegex(expected_vm2_lookup))
 
         # Delete ports and servers (via HEAT)
+        self.heat_client.delete_stack(vms_stack_id)
+        self.heat_client.wait_for_stack_status(vms_stack_id, 'DELETE_COMPLETE')
 
         # Check records are gone
-        pass
+        _, recordsets = self.recordset_client.list_recordset(zone['id'])
+        recordsets = recordsets['recordsets']
+        # Get all the VM specific records
+        recordsets_names = [x['name'] for x in recordsets if
+                            x['name'] != CONF.cross_service.dns_domain]
+        self.assertEqual(0, len(recordsets_names))
 
     def test_floating_ip_with_own_name_to_dns(self):
         pass
