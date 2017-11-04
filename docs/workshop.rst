@@ -385,12 +385,61 @@ Writing the Test
 We now have everything we need to write the scenario as a Tempest test.
 Steps of the tests are:
 
-* Create the domain on designate (via HEAT)
+* Create the domain in designate (via HEAT)
 * Assert the zone was created correctly
 * Update the private network definition with the domain
 * Assert that the network update was successful
-* Create ports and servers (via HEAT)
+* Create ports and servers stack (via HEAT)
 * Check records have been created
 * Check PTR records have been created
 * Ssh into a server, resolve the other server's name
-* 
+* Delete the ports and servers stack (via HEAT)
+* Check recordsets are deleted
+* Check PTR recordsets are deleted
+
+Depending on time, we can analyse each step in more details.
+Test intermediate states of your test code by running it::
+
+  tempest run --regex test_cross_service
+
+
+Best practices
+''''''''''''''
+
+- Name resources so that they be easily identified in logs
+- Schedule cleanup right after creation
+- Use `test_utils.call_and_ignore_notfound_exc` when invoking a delete method
+- Wait for status when create / delete / API action is not synchronous
+- Use assert in a way that it gives useful info when failing. For instance
+  `assertSetEqual` and `assertDictEqual` test all fields and report all
+  differences in a nice format - often useful on API tests
+- When writing tests for the gate, mind the test time!
+- Avoid race conditions, never test for transient states
+- For scenario tests, use log statements to help find your bearing in the log
+  while debugging
+
+
+Tips & Tricks
+'''''''''''''
+
+By default Tempest creates dynamic test credentials that are deleted at the
+end of the test run. That is helpful for test isolation but it does not
+help for test development. You can go around that with a few tricks:
+- use pre-provisioned credentials *TBD details*
+- prevent cleanup of credentials and of resources by overriding cleanup
+  methods
+- use print statements and make sure the test fails. Captured stdout will be
+  displayed for your test at the end of the run
+
+
+More Scenarios
+--------------
+
+If you have extra time during the workshop, or want to practise after it,
+you can implement more test scenarios. There are two more similar scenarios
+that can be implemented for this constellation or you can implement a
+scenario that is relevant for you.
+Feel free to submit pull requsts to my repo, I will be happy to review and
+provide feedback, or even merge them in the reop if you want.
+Or send me gerrit / github links to your multi-service test if you have
+issues you need help with. You can find me on IRC in #openstack-qa as andreaf.
