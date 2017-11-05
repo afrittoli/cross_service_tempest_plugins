@@ -526,8 +526,7 @@ By default Tempest creates dynamic test credentials that are deleted at the
 end of the test run. That is helpful for test isolation but it does not
 help for test development. You can go around that with a few tricks:
 - use pre-provisioned credentials https://docs.openstack.org/tempest/latest/configuration.html#pre-provisioned-credentials
-- prevent cleanup of credentials and of resources by overriding cleanup
-  methods
+- prevent cleanup of credentials and of resources by overriding cleanup methods
 - use print statements and make sure the test fails. Captured stdout will be
   displayed for your test at the end of the run
 
