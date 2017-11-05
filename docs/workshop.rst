@@ -206,6 +206,7 @@ Plugin Skeleton
 We start by creating the structure of the new plugin::
 
   cd ~
+  . ~/tempest/.tox/tempest/bin/activate
   pip install cookiecutter
   cookiecutter https://git.openstack.org/openstack/tempest-plugin-cookiecutter.git
 
@@ -223,10 +224,26 @@ We need three files, which we can copy from ~/workshop/cross_service_tempest_plu
 * setup.py
 * requirements.txt
 
+For each file::
+
+  cp ~/workshop/cross_service_tempest_plugins/<file> ~/cross_service/
+
+Update the packages in setup.py::
+
+  [files]
+  packages =
+    cross_service
+
+Make the repo a git repo and add a README.rst::
+
+  cd ~/cross_service
+  git init
+  touch README.rst
+
 Check the installation process::
 
-  . ~/tempest/.tox/tempest/bin/activate
-  pip install -e ~/cross_service_tempest_plugin
+  pip install -r requirements.txt
+  pip install -e ~/cross_service
 
 
 Make the plugin configurable
@@ -254,6 +271,8 @@ In plugin.py we need to implement two interfaces:
 * `get_opt_lists` is used for config option discovery, used for instance to generate
   a sample config file
 
+Examples are available at https://docs.openstack.org/tempest/latest/plugin.html.
+
 
 Implement the service client interface
 ''''''''''''''''''''''''''''''''''''''
@@ -269,7 +288,7 @@ we don't need to define any new one::
 Create a test module and make it discoverable
 '''''''''''''''''''''''''''''''''''''''''''''
 
-Add a test module in `~/cross_service_tempest_plugin/cross_service_tempest_plugin/tests/scenario`.
+Add a test module in `~/cross_service/cross_service_tempest_plugin/tests/scenario`.
 I called mine `test_cross_service.py`. We'll only need the class definition and
 a test method.  The test method name must start with `test_` for discovery to
 find it::
@@ -279,22 +298,20 @@ find it::
   class HeatDriverNeutronDNSIntegration(test.BaseTestCase):
     
       def test_floating_ip_with_name_from_port_to_dns(self):
-        pass
+          pass
 
 
 Let's test it::
 
-  pip install -e ~/cross_service_tempest_plugin
   cd ~/tempest
   tempest run --regex test_cross_service --list
   tempest run --regex test_cross_service
 
-*Do I really need to re-install?*
 
 Phases in Tempest test.py class setup
 '''''''''''''''''''''''''''''''''''''
 
-*TBD Add link to docs*
+https://docs.openstack.org/tempest/latest/HACKING.html#test-fixtures-and-resources
 
 * `skip_checks`
 * `setup_credentials`
@@ -335,7 +352,7 @@ To test this is working, we can uninstall one of the plugins we depend on::
 
 And then we reinstall the plugin again::
 
-  pip install -e ~/workshop/heat_tempest_plugin
+  pip install git+https://github.com/afrittoli/heat-tempest-plugin#egg=heat_tempest_plugin
   cd ~/tempest
   tempest run --regex test_cross_service
 
@@ -348,12 +365,20 @@ automatically by the the base test class `test.py`. The only thing we need to
 do is define which credentials we need to be provisioned for us. They will be
 created as part of `setup_credentials` along with network resources. The only
 time a test needs to overwrite `setup_credentials` is if it needs to disable
-provisioning of network resources. *TBD link to docs*.  This is not the case
-for us, so we only need::
+provisioning of network resources.
+http://git.openstack.org/cgit/openstack/tempest/tree/tempest/test.py#n302
+This is not the case for us, so we only need::
 
   class HeatDriverNeutronDNSIntegration(test.BaseTestCase):
             
       credentials = ['primary', 'admin']
+
+Try re-running the test and tail keystone logs in another window::
+
+  # In one windows
+  tempest run --regex test_cross_service
+  # in another window
+  sudo journalctl -f --unit devstack@k* | grep POST
 
 
 Setup client aliases
@@ -363,7 +388,7 @@ This step is, strictly speaking, not required. Creating aliases for clients can
 be convenient though since it makes the code simpler and more readable. This
 can be a double-edged sword: if a test relies on aliases setup by a parent test
 class, it can become difficult to know what client alias does what, which may
-lead to hard to debug issues.  *TBD link to docs**
+lead to issues hard to debug.
 
 Tempest base classes sets up a `ServiceClient` object for each type of
 credentials that has been requested. They can be accessed via
@@ -371,12 +396,16 @@ credentials that has been requested. They can be accessed via
 initialised with a set of credentials and with parameters from CONF.
 `ServiceClient` is dynamically extended with extra service clients for each
 plugin that implements the `get_service_clients` interface, as detailed in
-*TBD link to docs for this*.
+https://docs.openstack.org/tempest/latest/plugin.html#service-clients.
 
 To show how this works, let's have a look at the `get_service_client`
-implementation in the Heat and Designate Tempest plugins. *TBD links*. We can
-obtain an instance of any client defined in the parameters returned by the
-plugin by simply invoking it. All the parameters from configuration and the
+implementation in the Heat and Designate Tempest plugins. 
+
+* https://github.com/afrittoli/heat-tempest-plugin/blob/master/heat_integrationtests/plugin.py#L42
+* https://github.com/afrittoli/designate-tempest-plugin/blob/master/designate_tempest_plugin/plugin.py#L78
+
+We can obtain an instance of any client defined in the parameters returned by
+the plugin by simply invoking it. All the parameters from configuration and the
 credentials are pre-fed into clients.
 
 For example::
@@ -385,6 +414,9 @@ For example::
       cls.zones_client = cls.os_primary.dns_v2.ZonesClient()
       cls.network_admin_client = cls.os_admin.network.NetworksClient()
       cls.recordset_admin_client = cls.os_admin.dns_v2.RecordsetClient()
+
+You can either add clients here as you need them, or copy the complete list
+from the plugin in the `workshop` folder.
 
 
 Resource Setup
@@ -426,13 +458,15 @@ We will define two stacks:
 We don't have to start from scratch. There are templates available from the
 Heat team that we can re-use with minimal modifications:
 
-- *TBD links to thw two templates we used*
+* https://github.com/openstack/heat-templates/blob/master/hot/designate/desginate_domain.yaml
+* https://github.com/openstack/heat-templates/blob/master/hot/servers_in_existing_neutron_net.yaml
 
 It's useful to add resource names as inputs to the stacks since that allows
 to provision resources that can be associated with their tests when debugging.
 
 We store our customised templates under `tests/scenario/templates`, and we
-borrow a small helper from the Heat tests to load templates *TDB link*.
+borrow a small helper from the Heat tests to load templates:
+https://github.com/openstack/heat/blob/master/heat_integrationtests/common/test.py#L161
 
 
 Writing the Test
@@ -491,7 +525,7 @@ Tips & Tricks
 By default Tempest creates dynamic test credentials that are deleted at the
 end of the test run. That is helpful for test isolation but it does not
 help for test development. You can go around that with a few tricks:
-- use pre-provisioned credentials *TBD details*
+- use pre-provisioned credentials https://docs.openstack.org/tempest/latest/configuration.html#pre-provisioned-credentials
 - prevent cleanup of credentials and of resources by overriding cleanup
   methods
 - use print statements and make sure the test fails. Captured stdout will be
