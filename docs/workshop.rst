@@ -228,7 +228,7 @@ For each file::
 
   cp ~/workshop/cross_service_tempest_plugins/<file> ~/cross_service/
 
-Update the packages in setup.py::
+Update the packages in setup.cfg::
 
   [files]
   packages =
